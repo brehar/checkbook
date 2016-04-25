@@ -168,6 +168,8 @@ function saveTransaction(event) {
             var creditAmt = parseFloat($tx.closest('tr').find('.credit').text().replace(/\$/, ''));
             var debitAmt = parseFloat($tx.closest('tr').find('.debit').text().replace(/\$/, ''));
 
+            var $prevRow = $tx.closest('tr').prev();
+
             $tx.closest('tr').remove();
 
             var $transaction = $('.template').clone();
@@ -191,7 +193,7 @@ function saveTransaction(event) {
             $transaction.find('.edit-btn').attr('data-id', $('#edit-id').val());
             $transaction.find('.delete-btn').attr('data-id', $('#edit-id').val());
 
-            $('.transactions').append($transaction);
+            $prevRow.after($transaction);
 
             $('.modal-trigger').leanModal('destroy');
 
