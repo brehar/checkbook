@@ -23,6 +23,22 @@ router.route('/').get((req, res) => {
     });
 });
 
+router.get('/totaldebits', (req, res) => {
+    Checkbook.getDebitTotal((err, result) => {
+        if (err) return res.status(400).send(err);
+
+        res.send(result);
+    });
+});
+
+router.get('/totalcredits', (req, res) => {
+    Checkbook.getCreditTotal((err, result) => {
+        if (err) return res.status(400).send(err);
+
+        res.send(result);
+    });
+});
+
 router.route('/:id').get((req, res) => {
     var id = req.params.id;
     

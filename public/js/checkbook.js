@@ -6,13 +6,7 @@ $(document).ready(function() {
         selectYears: 15
     });
 
-    var docHeight = $(window).height();
-    var footerHeight = $('footer').height();
-    var footerTop = $('footer').position().top + footerHeight;
-
-    if (footerTop < docHeight) {
-        $('footer').css('margin-top', 10 + (docHeight - footerTop) + 'px');
-    }
+    fixFooter();
     
     $('.modal-trigger').leanModal();
 
@@ -25,6 +19,16 @@ $(document).ready(function() {
 
     updateRunningTotal();
 });
+
+function fixFooter() {
+    var docHeight = $(window).height();
+    var footerHeight = $('footer').height();
+    var footerTop = $('footer').position().top + footerHeight;
+
+    if (footerTop < docHeight) {
+        $('footer').css('margin-top', 10 + (docHeight - footerTop) + 'px');
+    }
+}
 
 function addTransaction(event) {
     event.preventDefault();
@@ -61,14 +65,12 @@ function addTransaction(event) {
 
             if (newTransaction.type === 0) {
                 $transaction.find('.credit').text('$' + newTransaction.amount);
-                var currentCreditBal = parseFloat($('.credit-total').text());
-                var newCreditBal = currentCreditBal + newTransaction.amount;
-                $('.credit-total').text(newCreditBal);
+
+                updateTotalCredits();
             } else {
                 $transaction.find('.debit').text('$' + newTransaction.amount);
-                var currentDebitBal = parseFloat($('.debit-total').text());
-                var newDebitBal = currentDebitBal + newTransaction.amount;
-                $('.debit-total').text(newDebitBal);
+
+                updateTotalDebits();
             }
 
             $transaction.find('.edit-btn').attr('data-id', newTransaction.id);
@@ -77,12 +79,26 @@ function addTransaction(event) {
             $('.transactions').append($transaction);
             
             $('.modal-trigger').leanModal('destroy');
-
-            updateRunningTotal();
         },
         error: function(err) {
             console.error('error:', err)
         }
+    });
+}
+
+function updateTotalCredits() {
+    $.get('/api/checkbook/totalcredits', function(data) {
+        $('.credit-total').text(data['Total Credits']);
+
+        updateRunningTotal();
+    });
+}
+
+function updateTotalDebits() {
+    $.get('/api/checkbook/totaldebits', function(data) {
+        $('.debit-total').text(data['Total Debits']);
+
+        updateRunningTotal();
     });
 }
 
@@ -98,18 +114,12 @@ function deleteTransaction() {
             var debitAmt = $transaction.closest('tr').find('.debit').text().replace(/\$/, '');
 
             if (creditAmt > 0) {
-                var currentCreditBal = parseFloat($('.credit-total').text());
-                var newCreditBal = currentCreditBal - creditAmt;
-                $('.credit-total').text(newCreditBal);
-            } else {
-                var currentDebitBal = parseFloat($('.debit-total').text());
-                var newDebitBal = currentDebitBal - debitAmt;
-                $('.debit-total').text(newDebitBal);
+                updateTotalCredits();
+            } else if (debitAmt > 0) {
+                updateTotalDebits();
             }
 
             $transaction.closest('tr').remove();
-
-            updateRunningTotal();
         },
         error: function(err) {
             console.error('error:', err);
@@ -145,7 +155,7 @@ function editTransaction() {
 function saveTransaction(event) {
     event.preventDefault();
 
-    if ($('input[name=edit-transaction]:checked').val() === 'credit') {
+    if ($('input[name=edittransaction]:checked').val() === 'credit') {
         var type = 0;
     } else {
         type = 1;
@@ -164,10 +174,6 @@ function saveTransaction(event) {
         data: transaction,
         success: function() {
             var $tx = $('.transactions').find('[data-id="' + $('#edit-id').val() + '"]');
-
-            var creditAmt = parseFloat($tx.closest('tr').find('.credit').text().replace(/\$/, ''));
-            var debitAmt = parseFloat($tx.closest('tr').find('.debit').text().replace(/\$/, ''));
-
             var $prevRow = $tx.closest('tr').prev();
 
             $tx.closest('tr').remove();
@@ -180,15 +186,12 @@ function saveTransaction(event) {
 
             if (transaction.type === 0) {
                 $transaction.find('.credit').text('$' + transaction.amount);
-                var currentCreditBal = parseFloat($('.credit-total').text());
-                var newCreditBal = currentCreditBal - creditAmt + parseFloat(transaction.amount);
-                $('.credit-total').text(newCreditBal);
-            } else {
+            } else if (transaction.type === 1) {
                 $transaction.find('.debit').text('$' + transaction.amount);
-                var currentDebitBal = parseFloat($('.debit-total').text());
-                var newDebitBal = currentDebitBal - debitAmt + parseFloat(transaction.amount);
-                $('.debit-total').text(newDebitBal);
             }
+
+            updateTotalCredits();
+            updateTotalDebits();
 
             $transaction.find('.edit-btn').attr('data-id', $('#edit-id').val());
             $transaction.find('.delete-btn').attr('data-id', $('#edit-id').val());
@@ -203,8 +206,6 @@ function saveTransaction(event) {
             $('#edit-credit').attr('checked', false);
             $('#edit-debit').attr('checked', false);
             $('#edit-id').val('');
-
-            updateRunningTotal();
         },
         error: function(err) {
             console.log('error:', err);
