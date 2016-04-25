@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>myCheckbook</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link type="text/css" rel="stylesheet" href="/css/materialize.min.css" media="screen,projection">
+    <link rel="stylesheet" href="/css/style.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script src="/js/materialize.min.js"></script>
+    <script src="/js/jquery.tablesorter.min.js"></script>
+    <script src="/js/checkbook.js"></script>
+</head>
+<body>
+    <nav class="blue-grey">
+        <div class="nav-wrapper">
+            <a href="/" class="brand-logo center">myCheckbook</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <form class="col s12 add-form">
+                <div class="row">
+                    <div class="input-field col m2 s4">
+                        <input id="date" type="date" class="datepicker">
+                        <label for="date">Date</label>
+                    </div>
+                    <div class="input-field col m4 s8">
+                        <input id="description" type="text">
+                        <label for="description">Description</label>
+                    </div>
+                    <div class="input-field col m2 s3">
+                        <input name="transaction" type="radio" id="credit" class="with-gap" value="credit" required>
+                        <label for="credit">Credit</label><br>
+                        <input name="transaction" type="radio" id="debit" class="with-gap" value="debit">
+                        <label for="debit">Debit</label>
+                    </div>
+                    <div class="input-field col m2 s3">
+                        <input id="amount" type="number" min="0.01" step="0.01" required>
+                        <label for="amount">Amount ($)</label>
+                    </div>
+                    <div class="input-field col m2 s6 center">
+                        <br><button class="waves-effect waves-light btn" type="submit">Add</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="row right-align italic">
+            Running total: <span class="running-total"></span>
+        </div>
+
+        <table class="bordered centered responsive-table tablesorter" id="transactions-table">
+            <thead>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Credits</th>
+                <th>Debits</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </thead>
+            <tbody class="transactions">
+                <% for (var i = 0; i < transactions.length; i++) { %>
+                    <tr>
+                        <td class="date"><%= transactions[i].date %></td>
+                        <td class="description"><%= transactions[i].description %></td>
+                        <% if (transactions[i].type === 0) { %>
+                            <td class="credit">$<%= transactions[i].amount %></td>
+                            <td class="debit"></td>
+                        <% } else { %>
+                            <td class="credit"></td>
+                            <td class="debit">$<%= transactions[i].amount %></td>
+                        <% } %>
+                        <td><a href="#editModal" class="modal-trigger btn-floating waves-effect waves-light edit-btn" data-id="<%= transactions[i].id %>"><i class="material-icons">mode_edit</i></a></td>
+                        <td><a class="btn-floating waves-effect waves-light red delete-btn" data-id="<%= transactions[i].id %>"><i class="material-icons">delete</i></a></td>
+                    </tr>
+                <% } %>
+                <tr class="template">
+                    <td class="date"></td>
+                    <td class="description"></td>
+                    <td class="credit"></td>
+                    <td class="debit"></td>
+                    <td><a href="#editModal" class="modal-trigger btn-floating waves-effect waves-light edit-btn"><i class="material-icons">mode_edit</i></a></td>
+                    <td><a class="btn-floating waves-effect waves-light red delete-btn"><i class="material-icons">delete</i></a></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td></td>
+                    <td class="bold right-align">Totals:</td>
+                    <td class="bold center green-text">$<span class="credit-total"><%= totalCredits['Total Credits'] %></span></td>
+                    <td class="bold center red-text">$<span class="debit-total"><%= totalDebits['Total Debits'] %></span></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="modal modal-fixed-footer" id="editModal">
+            <form class="edit-form">
+                <div class="modal-content">
+                    <h4>Edit Transaction</h4>
+                    <div class="row">
+                        <div class="input-field col m4 s12">
+                            <input id="edit-date" type="date" class="datepicker">
+                            <label for="edit-date">Date</label>
+                        </div>
+                        <div class="input-field col m8 s12">
+                            <input id="edit-description" type="text">
+                            <label for="edit-description">Description</label>
+                        </div>
+                        <div class="input-field col m6 s12">
+                            <input name="edit-transaction" type="radio" id="edit-credit" class="with-gap" value="credit" required>
+                            <label for="edit-credit">Credit</label><br>
+                            <input name="edit-transaction" type="radio" id="edit-debit" class="with-gap" value="debit">
+                            <label for="edit-debit">Debit</label>
+                        </div>
+                        <div class="input-field col m6 s12">
+                            <input id="edit-amount" type="number" min="0.01" step="0.01" required>
+                            <label for="edit-amount">Amount ($)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input id="edit-id" type="hidden">
+                    <button type="submit" class="modal-action modal-close waves-effect waves-light btn">Save Changes</button>
+                    <button type="button" class="modal-action modal-close waves-effect waves-light btn red">Discard Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="page-footer blue-grey text-darken-2">
+        <div class="footer-copyright">
+            <div class="container center">
+                &copy; 2016 Brett Hartman
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
